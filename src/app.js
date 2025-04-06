@@ -3,13 +3,21 @@ import { logger } from 'hono/logger';
 import { getCookie, setCookie } from 'hono/cookie';
 import { serveStatic } from 'hono/deno';
 
+const parseSessionId = async (c, next) => {
+  const sessionId = parseInt(getCookie(c, 'sessionId'));
+  if (!isNaN(sessionId)) {
+    c.set('sessionId', sessionId);
+  }
+  return await next();
+}
+
 const addSessions = (sessions) => async (c, next) => {
   c.set('sessions', sessions);
   return await next();
 }
 
 const serveHome = (c) => {
-  const sessionId = parseInt(getCookie(c, 'sessionId'));
+  const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
 
   if (sessions.isValidSession(sessionId)) {
@@ -22,6 +30,7 @@ const serveHome = (c) => {
 export const createApp = (sessions) => {
   const app = new Hono();
   app.use(addSessions(sessions));
+  app.use(parseSessionId);
   app.use('*', logger());
   app.get('/', serveHome);
   app.get('/login', serveStatic({ path: './public/login.html' }));

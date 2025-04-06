@@ -94,5 +94,34 @@ describe('App', () => {
       assertEquals(response.status, 200);
       assertEquals(status.status, "waiting");
     });
+
+    it('should create a new game when the second player joins', async () => {
+      const sessions = new Sessions();
+      const sessionId1 = sessions.createSession("Player1");
+      const sessionId2 = sessions.createSession("Player2");
+      const app = createApp(sessions);
+
+      const r1 = new Request('http://localhost/status', {
+        method: 'GET',
+        headers: {
+          'Cookie': `sessionId=${sessionId1}`,
+        },
+      });
+      const response1 = await app.request(r1);
+      const status1 = await response1.json();
+      assertEquals(response1.status, 200);
+      assertEquals(status1.status, "playing");
+
+      const r2 = new Request('http://localhost/status', {
+        method: 'GET',
+        headers: {
+          'Cookie': `sessionId=${sessionId2}`,
+        },
+      });
+      const response2 = await app.request(r2);
+      const status2 = await response2.json();
+      assertEquals(response2.status, 200);
+      assertEquals(status2.status, "playing");
+    })
   });
 });

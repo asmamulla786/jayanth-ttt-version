@@ -18,6 +18,18 @@ describe("Sessions class", () => {
       assertEquals(session.name, playerName);
       assertEquals(session.sessionId, sessionId);
     });
+
+    it("should create a game when the second player joins", () => {
+      const sessions = new Sessions();
+      const playerName1 = "Player1";
+      const playerName2 = "Player2";
+      const sessionId1 = sessions.createSession(playerName1);
+      const sessionId2 = sessions.createSession(playerName2);
+      const status1 = sessions.getStatus(sessionId1);
+      const status2 = sessions.getStatus(sessionId2);
+      assertEquals(status1, "playing");
+      assertEquals(status2, "playing");
+    });
   });
 
   describe("getSession()", () => {

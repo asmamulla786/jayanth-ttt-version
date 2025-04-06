@@ -1,6 +1,8 @@
 export class Sessions {
   #nextId;
   #sessions;
+  #waiting;
+
   constructor() {
     this.#sessions = new Map();
     this.#nextId = 1;
@@ -13,6 +15,15 @@ export class Sessions {
       sessionId,
       status: 'waiting'
     });
+
+    if (this.#waiting) {
+      this.#sessions.get(this.#waiting).status = 'playing';
+      this.#sessions.get(sessionId).status = 'playing';
+      this.#waiting = undefined;
+    } else {
+      this.#waiting = sessionId;
+    }
+
     return sessionId;
   }
 
