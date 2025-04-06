@@ -3,7 +3,14 @@
     "hono": "npm:hono@^4.7.5"
   },
   "tasks": {
-    "start": "deno run --allow-net --allow-read --allow-write src/server.js",
-    "test": "deno test --allow-read --allow-write"
+    "start": "deno run -A --watch src/server.js",
+    "test": "deno test -A",
+    "test-watch": "deno test --watch -A",
+    "lint": "deno lint",
+    "test-coverage": "deno test -A --coverage=coverage",
+    "coverage": {
+      "command": "deno coverage --html",
+      "dependencies": ["test-coverage"]
+    }
   }
 }
