@@ -13,7 +13,7 @@ describe('App', () => {
       assertEquals(response.headers.get('location'), '/login');
     });
 
-    it('should redirect to game page for a valid user', async () => {
+    it('should redirect to a waiting page for a valid user who is waiting', async () => {
       const sessions = new Sessions();
       const id = sessions.createSession('Nobody');
       const app = createApp(sessions);
@@ -25,7 +25,7 @@ describe('App', () => {
       });
       const response = await app.request(r);
       assertEquals(response.status, 303);
-      assertEquals(response.headers.get('location'), '/home');
+      assertEquals(response.headers.get('location'), '/waiting');
     });
 
     it('should redirect to login page for an invalid user', async () => {
@@ -74,7 +74,7 @@ describe('App', () => {
       });
       const response2 = await app.request(secondReq);
       assertEquals(response2.status, 303);
-      assertEquals(response2.headers.get('location'), '/home');
+      assertEquals(response2.headers.get('location'), '/waiting');
     });
   });
 

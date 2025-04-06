@@ -16,39 +16,79 @@ const addSessions = (sessions) => async (c, next) => {
   return await next();
 }
 
-const serveHome = (c) => {
+const ensureIsLoggedIn = async (c, next) => {
   const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
 
-  if (sessions.isValidSession(sessionId)) {
-    return c.redirect('/home', 303);
+  if (!sessions.isValidSession(sessionId)) {
+    return c.redirect('/login', 303);
   }
-  return c.redirect('/login', 303);
+  return await next();
 }
 
+const ensureIsWaiting = async (c, next) => {
+  const sessionId = c.get('sessionId');
+  const sessions = c.get('sessions');
+
+  if (sessions.getStatus(sessionId) !== 'waiting') {
+    return c.redirect('/', 303);
+  }
+
+  return await next();
+}
+
+const ensureIsPlaying = async (c, next) => {
+  const sessionId = c.get('sessionId');
+  const sessions = c.get('sessions');
+
+  if (sessions.getStatus(sessionId) !== 'playing') {
+    return c.redirect('/', 303);
+  }
+
+  return await next();
+}
+
+const serveIndex = (c) => {
+  const sessionId = c.get('sessionId');
+  const sessions = c.get('sessions');
+
+  if (sessions.getStatus(sessionId) === 'waiting') {
+    return c.redirect('/waiting', 303);
+  }
+
+  return c.redirect('/home', 303);
+}
+
+const handleLogin = async (c) => {
+  const formData = await c.req.formData();
+  const sessions = c.get('sessions');
+  const sessionId = sessions.createSession(formData.get('name'));
+  setCookie(c, 'sessionId', sessionId);
+  return c.redirect('/', 303);
+};
+
+const handleGetStatus = (c) => {
+  const sessionId = parseInt(getCookie(c, 'sessionId'));
+  const sessions = c.get('sessions');
+  const status = sessions.getStatus(sessionId);
+  return c.json({ status });
+}
 
 export const createApp = (sessions) => {
   const app = new Hono();
   app.use(addSessions(sessions));
   app.use(parseSessionId);
-  app.use('*', logger());
-  app.get('/', serveHome);
-  app.get('/login', serveStatic({ path: './public/login.html' }));
+  app.use(logger());
+  app.get('/login', serveStatic({ path: './public/login.html' }))
+    .post(handleLogin);
 
-  app.post('/login', async (c) => {
-    const formData = await c.req.formData();
-    const sessions = c.get('sessions');
-    const sessionId = sessions.createSession(formData.get('name'));
-    setCookie(c, 'sessionId', sessionId);
-    return c.redirect('/', 303);
-  });
-
-  app.get('/status', (c) => {
-    const sessionId = parseInt(getCookie(c, 'sessionId'));
-    const sessions = c.get('sessions');
-    const status = sessions.getStatus(sessionId);
-    return c.json({ status });
-  });
+  app.use(ensureIsLoggedIn);
+  app.get('/', serveIndex);
+  app.use('/waiting', ensureIsWaiting)
+    .get(serveStatic({ path: './public/waiting.html' }));
+  app.get('/home', ensureIsPlaying)
+    .get(serveStatic({ path: './public/home.html' }));
+  app.get('/status', handleGetStatus);
 
   app.get('/*', serveStatic({ root: './public' }));
   return app;

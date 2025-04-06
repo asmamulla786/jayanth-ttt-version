@@ -101,5 +101,19 @@ describe("Sessions class", () => {
       const status = sessions.getStatus(sessionId);
       assertEquals(status, "waiting");
     });
+
+    it("the third player should be waiting", () => {
+      const sessions = new Sessions();
+      const sessionId1 = sessions.createSession("player1");
+      const sessionId2 = sessions.createSession("player2");
+      const sessionId3 = sessions.createSession("player3");
+
+      const status1 = sessions.getStatus(sessionId1);
+      const status2 = sessions.getStatus(sessionId2);
+      const status3 = sessions.getStatus(sessionId3);
+      assertEquals(status1, "playing");
+      assertEquals(status2, "playing");
+      assertEquals(status3, "waiting");
+    });
   })
 });
