@@ -89,7 +89,12 @@ export const createApp = (sessions) => {
     .get(serveStatic({ path: './public/waiting.html' }));
   app.get('/home', ensureIsPlaying)
     .get(serveStatic({ path: './public/home.html' }));
-
+  app.get('/game-state', (c) => {
+    const sessionId = c.get('sessionId');
+    const sessions = c.get('sessions');
+    const gameState = sessions.getGameState(sessionId);
+    return c.json(gameState);
+  });
   app.get('/*', serveStatic({ root: './public' }));
   return app;
 };

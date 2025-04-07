@@ -112,3 +112,53 @@ Deno.test('should win when reverse diagonal is filled', () => {
 
   assertEquals(game.getWinner(), 'Alice');
 });
+
+Deno.test('should provide the game state for the current player', () => {
+  const game = new TicTacToe({ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' });
+
+  const state = game.getGameState(1);
+  assertEquals(state, {
+    you: { name: 'Alice', symbol: 'X' },
+    opponent: { name: 'Bob', symbol: 'O' },
+    board: ['', '', '', '', '', '', '', '', ''],
+    isYourTurn: true,
+  });
+})
+
+Deno.test('should provide the game state for the opponent', () => {
+  const game = new TicTacToe({ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' });
+
+  const state = game.getGameState(2);
+  assertEquals(state, {
+    you: { name: 'Bob', symbol: 'O' },
+    opponent: { name: 'Alice', symbol: 'X' },
+    board: ['', '', '', '', '', '', '', '', ''],
+    isYourTurn: false,
+  });
+})
+
+Deno.test('should provide the game state for the current player after marking', () => {
+  const game = new TicTacToe({ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' });
+
+  game.mark(0, 0); // Alice
+  const state = game.getGameState(2);
+  assertEquals(state, {
+    you: { name: 'Bob', symbol: 'O' },
+    opponent: { name: 'Alice', symbol: 'X' },
+    board: ['X', '', '', '', '', '', '', '', ''],
+    isYourTurn: true,
+  });
+})
+
+Deno.test('should provide the game state for the opponent player after marking', () => {
+  const game = new TicTacToe({ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' });
+
+  game.mark(0, 0); // Alice
+  const state = game.getGameState(1);
+  assertEquals(state, {
+    you: { name: 'Alice', symbol: 'X' },
+    opponent: { name: 'Bob', symbol: 'O' },
+    board: ['X', '', '', '', '', '', '', '', ''],
+    isYourTurn: false,
+  });
+})

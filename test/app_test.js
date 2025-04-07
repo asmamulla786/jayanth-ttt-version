@@ -206,4 +206,50 @@ describe('App', () => {
       assertEquals(response.headers.get('location'), '/');
     });
   });
+
+  describe('GET /game-state', () => {
+    it('First status of the current player', async () => {
+      const sessions = new Sessions();
+      const sessionId = sessions.createSession('Nobody');
+      sessions.createSession('Somebody');
+      const app = createApp(sessions);
+      const r = new Request('http://localhost/game-state', {
+        method: 'GET',
+        headers: {
+          'Cookie': `sessionId=${sessionId}`,
+        },
+      });
+      const response = await app.request(r);
+      assertEquals(response.status, 200);
+      const gameState = await response.json();
+      assertEquals(gameState, {
+        'you': { name: 'Nobody', symbol: 'X' },
+        'opponent': { name: 'Somebody', symbol: 'O' },
+        'isYourTurn': true,
+        'board': ['', '', '', '', '', '', '', '', ''],
+      });
+    });
+
+    it('First status of the opponent', async () => {
+      const sessions = new Sessions();
+      const sessionId = sessions.createSession('Nobody');
+      const opponentSessionId = sessions.createSession('Somebody');
+      const app = createApp(sessions);
+      const r = new Request('http://localhost/game-state', {
+        method: 'GET',
+        headers: {
+          'Cookie': `sessionId=${opponentSessionId}`,
+        },
+      });
+      const response = await app.request(r);
+      assertEquals(response.status, 200);
+      const gameState = await response.json();
+      assertEquals(gameState, {
+        'you': { name: 'Somebody', symbol: 'O' },
+        'opponent': { name: 'Nobody', symbol: 'X' },
+        'isYourTurn': false,
+        'board': ['', '', '', '', '', '', '', '', ''],
+      });
+    });
+  });
 });

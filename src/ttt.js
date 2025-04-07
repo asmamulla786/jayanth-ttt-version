@@ -76,4 +76,23 @@ export class TicTacToe {
     this.winner = null;
     this.moves = 0;
   }
+
+  getGameState(playerId) {
+    const playerIndex = this.players.findIndex(player => player.id === playerId);
+    const opponentIndex = 1 - playerIndex;
+    const isYourTurn = this.players[this.currentPlayerIndex].id === playerId;
+
+    return {
+      you: {
+        name: this.players[playerIndex].name,
+        symbol: this.symbols[playerIndex],
+      },
+      opponent: {
+        name: this.players[opponentIndex].name,
+        symbol: this.symbols[opponentIndex],
+      },
+      isYourTurn,
+      board: this.getBoard().flat().map(cell => cell || ''),
+    };
+  }
 }
