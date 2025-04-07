@@ -115,5 +115,11 @@ describe("Sessions class", () => {
       assertEquals(status2, "playing");
       assertEquals(status3, "waiting");
     });
+
+    it("should return undefined for an invalid session ID", () => {
+      const sessions = new Sessions();
+      const status = sessions.getStatus(999); // Invalid session ID
+      assertEquals(status, undefined);
+    });
   })
 });

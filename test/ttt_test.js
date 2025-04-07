@@ -100,3 +100,15 @@ Deno.test('should reset the game correctly', () => {
   assertEquals(game.isDraw(), false);
   game.getBoard().forEach(row => row.forEach(cell => assertEquals(cell, null)));
 });
+
+Deno.test('should win when reverse diagonal is filled', () => {
+  const game = new TicTacToe('Alice', 'Bob');
+
+  game.mark(0, 2); // X
+  game.mark(0, 1); // O
+  game.mark(1, 1); // X
+  game.mark(0, 0); // O
+  game.mark(2, 0); // X - Wins
+
+  assertEquals(game.getWinner(), 'Alice');
+});

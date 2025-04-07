@@ -84,11 +84,11 @@ export const createApp = (sessions) => {
 
   app.use(ensureIsLoggedIn);
   app.get('/', serveIndex);
+  app.get('/status', handleGetStatus);
   app.use('/waiting', ensureIsWaiting)
     .get(serveStatic({ path: './public/waiting.html' }));
   app.get('/home', ensureIsPlaying)
     .get(serveStatic({ path: './public/home.html' }));
-  app.get('/status', handleGetStatus);
 
   app.get('/*', serveStatic({ root: './public' }));
   return app;

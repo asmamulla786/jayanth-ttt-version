@@ -41,6 +41,22 @@ describe('App', () => {
       assertEquals(response.status, 303);
       assertEquals(response.headers.get('location'), '/login');
     });
+
+    it('should redirect to home page for a valid user who is playing', async () => {
+      const sessions = new Sessions();
+      const id = sessions.createSession('Nobody');
+      sessions.createSession('Somebody');
+      const app = createApp(sessions);
+      const r = new Request('http://localhost/', {
+        method: 'GET',
+        headers: {
+          'Cookie': `sessionId=${id}`,
+        },
+      });
+      const response = await app.request(r);
+      assertEquals(response.status, 303);
+      assertEquals(response.headers.get('location'), '/home');
+    });
   });
 
   describe('/login', { sanitizeResources: true }, () => {
@@ -123,5 +139,71 @@ describe('App', () => {
       assertEquals(response2.status, 200);
       assertEquals(status2.status, "playing");
     })
+  });
+
+  describe('/waiting', () => {
+    it('should redirect to /home if the user is playing', async () => {
+      const sessions = new Sessions();
+      const sessionId = sessions.createSession('Nobody');
+      sessions.createSession('Somebody');
+      const app = createApp(sessions);
+      const r = new Request('http://localhost/waiting', {
+        method: 'GET',
+        headers: {
+          'Cookie': `sessionId=${sessionId}`,
+        },
+      });
+      const response = await app.request(r);
+      assertEquals(response.status, 303);
+      assertEquals(response.headers.get('location'), '/');
+    });
+
+    it('should serve the waiting page if the user is waiting', async () => {
+      const sessions = new Sessions();
+      const sessionId = sessions.createSession('Nobody');
+      const app = createApp(sessions);
+      const r = new Request('http://localhost/waiting', {
+        method: 'GET',
+        headers: {
+          'Cookie': `sessionId=${sessionId}`,
+        },
+      });
+      const response = await app.request(r);
+      await response.text();
+      assertEquals(response.status, 200);
+    });
+  });
+
+  describe('/home', () => {
+    it('should serve the home page if the user is playing', async () => {
+      const sessions = new Sessions();
+      const sessionId = sessions.createSession('Nobody');
+      sessions.createSession('Somebody');
+      const app = createApp(sessions);
+      const r = new Request('http://localhost/home', {
+        method: 'GET',
+        headers: {
+          'Cookie': `sessionId=${sessionId}`,
+        },
+      });
+      const response = await app.request(r);
+      await response.text();
+      assertEquals(response.status, 200);
+    });
+
+    it('should redirect to / if the user is not playing', async () => {
+      const sessions = new Sessions();
+      const sessionId = sessions.createSession('Nobody');
+      const app = createApp(sessions);
+      const r = new Request('http://localhost/home', {
+        method: 'GET',
+        headers: {
+          'Cookie': `sessionId=${sessionId}`,
+        },
+      });
+      const response = await app.request(r);
+      assertEquals(response.status, 303);
+      assertEquals(response.headers.get('location'), '/');
+    });
   });
 });
