@@ -8,10 +8,10 @@ const extractSessionId = async (c, next) => {
   return await next();
 };
 
-const addSessions = (sessions) => async (c, next) => {
+const addSessions = sessions => async (c, next) => {
   c.set('sessions', sessions);
   return await next();
-}
+};
 
 const ensureAuthenticated = async (c, next) => {
   const sessionId = c.get('sessionId');
@@ -21,7 +21,7 @@ const ensureAuthenticated = async (c, next) => {
     return c.redirect('/login', 303);
   }
   return await next();
-}
+};
 
 const ensureGuest = async (c, next) => {
   const sessionId = c.get('sessionId');
@@ -32,43 +32,42 @@ const ensureGuest = async (c, next) => {
   }
 
   return await next();
-}
-
+};
 
 const ensureWaitingPlayer = async (c, next) => {
   const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
 
-  if (sessions.getStatus(sessionId) !== 'waiting') {
+  if (!sessions.isWaiting(sessionId)) {
     return c.redirect('/', 303);
   }
 
   return await next();
-}
+};
 
 const ensureActivePlayer = async (c, next) => {
   const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
 
-  if (sessions.getStatus(sessionId) !== 'playing') {
+  if (!sessions.isPlaying(sessionId)) {
     return c.redirect('/', 303);
   }
 
   return await next();
-}
+};
 
-const serveIndex = (c) => {
+const serveIndex = c => {
   const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
 
-  if (sessions.getStatus(sessionId) === 'waiting') {
+  if (sessions.isWaiting(sessionId)) {
     return c.redirect('/waiting', 303);
   }
 
   return c.redirect('/home', 303);
-}
+};
 
-const handleLogin = async (c) => {
+const handleLogin = async c => {
   const formData = await c.req.formData();
   const sessions = c.get('sessions');
   const sessionId = sessions.createSession(formData.get('name'));
@@ -76,20 +75,19 @@ const handleLogin = async (c) => {
   return c.redirect('/', 303);
 };
 
-const handleGetStatus = (c) => {
+const handleGetStatus = c => {
   const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
   const status = sessions.getStatus(sessionId);
   return c.json({ status });
-}
+};
 
-const getGameState = (c) => {
+const getGameState = c => {
   const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
   const gameState = sessions.getGameState(sessionId);
   return c.json(gameState);
-}
-
+};
 
 export {
   extractSessionId,

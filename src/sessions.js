@@ -20,6 +20,21 @@ export class Sessions {
       { id: p2.sessionId, name: p2.name }
     );
   }
+
+  isWaiting(sessionId) {
+    return (
+      this.isValidSession(sessionId) &&
+      this.#sessions.get(sessionId).status === 'waiting'
+    );
+  }
+
+  isPlaying(sessionId) {
+    return (
+      this.isValidSession(sessionId) &&
+      this.#sessions.get(sessionId).status === 'playing'
+    );
+  }
+
   createSession(playerName) {
     const sessionId = this.#nextId++;
     this.#sessions.set(sessionId, {
