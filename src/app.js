@@ -5,6 +5,7 @@ import {
   addSessions,
   parseSessionId,
   ensureIsLoggedIn,
+  ensureIsNotLoggedIn,
   ensureIsPlaying,
   ensureIsWaiting,
   serveIndex,
@@ -13,22 +14,44 @@ import {
   getGameState,
 } from "./handlers.js";
 
+const createGuestRoutes = () => {
+  const guestRoutes = new Hono();
+  guestRoutes.use('/login', ensureIsNotLoggedIn)
+    .get('/login', serveStatic({ path: './public/login.html' }))
+    .post(handleLogin);
+  return guestRoutes;
+}
+
+const createAuthenticatedRoutes = () => {
+  const authenticatedRoutes = new Hono();
+
+  authenticatedRoutes.use(ensureIsLoggedIn);
+  authenticatedRoutes.get('/', serveIndex);
+  authenticatedRoutes.get('/status', handleGetStatus);
+
+  authenticatedRoutes.use('/waiting', ensureIsWaiting)
+    .get(serveStatic({ path: './public/waiting.html' }));
+
+  authenticatedRoutes.use('/home', ensureIsPlaying)
+    .get(serveStatic({ path: './public/home.html' }));
+
+  authenticatedRoutes.get('/game-state', getGameState);
+  authenticatedRoutes.get('/*', serveStatic({ root: './public' }));
+  return authenticatedRoutes;
+}
+
+
 export const createApp = (sessions) => {
+  const guestRoutes = createGuestRoutes();
+  const authenticatedRoutes = createAuthenticatedRoutes();
+
   const app = new Hono();
+
+  app.use(logger());
   app.use(addSessions(sessions));
   app.use(parseSessionId);
-  app.use(logger());
-  app.get('/login', serveStatic({ path: './public/login.html' }))
-    .post(handleLogin);
 
-  app.use(ensureIsLoggedIn);
-  app.get('/', serveIndex);
-  app.get('/status', handleGetStatus);
-  app.use('/waiting', ensureIsWaiting)
-    .get(serveStatic({ path: './public/waiting.html' }));
-  app.get('/home', ensureIsPlaying)
-    .get(serveStatic({ path: './public/home.html' }));
-  app.get('/game-state', getGameState);
-  app.get('/*', serveStatic({ root: './public' }));
+  app.route('/', guestRoutes);
+  app.route('/', authenticatedRoutes);
   return app;
 };

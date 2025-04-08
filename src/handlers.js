@@ -23,6 +23,18 @@ const ensureIsLoggedIn = async (c, next) => {
   return await next();
 }
 
+const ensureIsNotLoggedIn = async (c, next) => {
+  const sessionId = c.get('sessionId');
+  const sessions = c.get('sessions');
+
+  if (sessionId && sessions.isValidSession(sessionId)) {
+    return c.redirect('/', 303);
+  }
+
+  return await next();
+}
+
+
 const ensureIsWaiting = async (c, next) => {
   const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
@@ -83,6 +95,7 @@ export {
   parseSessionId,
   addSessions,
   ensureIsLoggedIn,
+  ensureIsNotLoggedIn,
   ensureIsWaiting,
   ensureIsPlaying,
   serveIndex,
