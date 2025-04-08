@@ -68,10 +68,17 @@ const handleLogin = async (c) => {
 };
 
 const handleGetStatus = (c) => {
-  const sessionId = parseInt(getCookie(c, 'sessionId'));
+  const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
   const status = sessions.getStatus(sessionId);
   return c.json({ status });
+}
+
+const getGameState = (c) => {
+  const sessionId = c.get('sessionId');
+  const sessions = c.get('sessions');
+  const gameState = sessions.getGameState(sessionId);
+  return c.json(gameState);
 }
 
 export const createApp = (sessions) => {
@@ -89,12 +96,7 @@ export const createApp = (sessions) => {
     .get(serveStatic({ path: './public/waiting.html' }));
   app.get('/home', ensureIsPlaying)
     .get(serveStatic({ path: './public/home.html' }));
-  app.get('/game-state', (c) => {
-    const sessionId = c.get('sessionId');
-    const sessions = c.get('sessions');
-    const gameState = sessions.getGameState(sessionId);
-    return c.json(gameState);
-  });
+  app.get('/game-state', getGameState);
   app.get('/*', serveStatic({ root: './public' }));
   return app;
 };
