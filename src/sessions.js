@@ -1,4 +1,4 @@
-import { TicTacToe } from "./ttt.js";
+import { TicTacToe } from './ttt.js';
 
 export class Sessions {
   #nextId;
@@ -10,20 +10,26 @@ export class Sessions {
     this.#nextId = 1;
   }
 
+  #createGame(sessionId) {
+    this.#sessions.get(this.#waiting).status = 'playing';
+    this.#sessions.get(sessionId).status = 'playing';
+    const p1 = this.#sessions.get(this.#waiting);
+    const p2 = this.#sessions.get(sessionId);
+    return new TicTacToe(
+      { id: p1.sessionId, name: p1.name },
+      { id: p2.sessionId, name: p2.name }
+    );
+  }
   createSession(playerName) {
     const sessionId = this.#nextId++;
     this.#sessions.set(sessionId, {
       name: playerName,
       sessionId,
-      status: 'waiting'
+      status: 'waiting',
     });
 
     if (this.#waiting) {
-      this.#sessions.get(this.#waiting).status = 'playing';
-      this.#sessions.get(sessionId).status = 'playing';
-      const p1 = this.#sessions.get(this.#waiting);
-      const p2 = this.#sessions.get(sessionId);
-      const game = new TicTacToe({ id: p1.sessionId, name: p1.name }, { id: p2.sessionId, name: p2.name });
+      const game = this.#createGame(sessionId);
       this.#sessions.get(this.#waiting).game = game;
       this.#sessions.get(sessionId).game = game;
       this.#waiting = undefined;
