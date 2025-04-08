@@ -3,11 +3,11 @@ import { logger } from 'hono/logger';
 import { serveStatic } from 'hono/deno';
 import {
   addSessions,
-  parseSessionId,
-  ensureIsLoggedIn,
-  ensureIsNotLoggedIn,
-  ensureIsPlaying,
-  ensureIsWaiting,
+  extractSessionId,
+  ensureAuthenticated,
+  ensureGuest,
+  ensureActivePlayer,
+  ensureWaitingPlayer,
   serveIndex,
   handleLogin,
   handleGetStatus,
@@ -16,7 +16,7 @@ import {
 
 const createGuestRoutes = () => {
   const guestRoutes = new Hono();
-  guestRoutes.use('/login', ensureIsNotLoggedIn)
+  guestRoutes.use('/login', ensureGuest)
     .get('/login', serveStatic({ path: './public/login.html' }))
     .post(handleLogin);
   return guestRoutes;
@@ -25,14 +25,14 @@ const createGuestRoutes = () => {
 const createAuthenticatedRoutes = () => {
   const authenticatedRoutes = new Hono();
 
-  authenticatedRoutes.use(ensureIsLoggedIn);
+  authenticatedRoutes.use(ensureAuthenticated);
   authenticatedRoutes.get('/', serveIndex);
   authenticatedRoutes.get('/status', handleGetStatus);
 
-  authenticatedRoutes.use('/waiting', ensureIsWaiting)
+  authenticatedRoutes.use('/waiting', ensureWaitingPlayer)
     .get(serveStatic({ path: './public/waiting.html' }));
 
-  authenticatedRoutes.use('/home', ensureIsPlaying)
+  authenticatedRoutes.use('/home', ensureActivePlayer)
     .get(serveStatic({ path: './public/home.html' }));
 
   authenticatedRoutes.get('/game-state', getGameState);
@@ -49,7 +49,7 @@ export const createApp = (sessions) => {
 
   app.use(logger());
   app.use(addSessions(sessions));
-  app.use(parseSessionId);
+  app.use(extractSessionId);
 
   app.route('/', guestRoutes);
   app.route('/', authenticatedRoutes);

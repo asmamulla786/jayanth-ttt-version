@@ -1,6 +1,6 @@
 import { getCookie, setCookie } from 'hono/cookie';
 
-const parseSessionId = async (c, next) => {
+const extractSessionId = async (c, next) => {
   const sessionId = parseInt(getCookie(c, 'sessionId'));
   if (!isNaN(sessionId)) {
     c.set('sessionId', sessionId);
@@ -13,7 +13,7 @@ const addSessions = (sessions) => async (c, next) => {
   return await next();
 }
 
-const ensureIsLoggedIn = async (c, next) => {
+const ensureAuthenticated = async (c, next) => {
   const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
 
@@ -23,7 +23,7 @@ const ensureIsLoggedIn = async (c, next) => {
   return await next();
 }
 
-const ensureIsNotLoggedIn = async (c, next) => {
+const ensureGuest = async (c, next) => {
   const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
 
@@ -35,7 +35,7 @@ const ensureIsNotLoggedIn = async (c, next) => {
 }
 
 
-const ensureIsWaiting = async (c, next) => {
+const ensureWaitingPlayer = async (c, next) => {
   const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
 
@@ -46,7 +46,7 @@ const ensureIsWaiting = async (c, next) => {
   return await next();
 }
 
-const ensureIsPlaying = async (c, next) => {
+const ensureActivePlayer = async (c, next) => {
   const sessionId = c.get('sessionId');
   const sessions = c.get('sessions');
 
@@ -92,12 +92,12 @@ const getGameState = (c) => {
 
 
 export {
-  parseSessionId,
+  extractSessionId,
   addSessions,
-  ensureIsLoggedIn,
-  ensureIsNotLoggedIn,
-  ensureIsWaiting,
-  ensureIsPlaying,
+  ensureAuthenticated,
+  ensureGuest,
+  ensureWaitingPlayer,
+  ensureActivePlayer,
   serveIndex,
   handleLogin,
   handleGetStatus,
