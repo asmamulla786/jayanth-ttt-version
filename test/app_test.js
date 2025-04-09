@@ -94,6 +94,30 @@ describe('App', () => {
       assertEquals(response2.status, 303);
       assertEquals(response2.headers.get('location'), '/waiting');
     });
+
+    it('should redirect a logged-in user to the appropriate page', async () => {
+      const sessions = new Sessions();
+      const sessionId = sessions.createSession('Nobody');
+      const app = createApp(sessions);
+
+      const r = new Request('http://localhost/login');
+      r.headers.set('Cookie', `sessionId=${sessionId}`);
+
+      const response = await app.request(r);
+
+      assertEquals(response.status, 303);
+      assertEquals(response.headers.get('location'), '/');
+
+      // Also test the case where the user is already playing a game
+      sessions.createSession('Somebody');
+      const r2 = new Request('http://localhost/login');
+      r2.headers.set('Cookie', `sessionId=${sessionId}`);
+
+      const response2 = await app.request(r2);
+
+      assertEquals(response2.status, 303);
+      assertEquals(response2.headers.get('location'), '/');
+    });
   });
 
   describe('/status', () => {
