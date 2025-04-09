@@ -43,14 +43,15 @@ export class Sessions {
       status: 'waiting',
     });
 
-    if (this.#waiting) {
-      const game = this.#createGame(sessionId);
-      this.#sessions.get(this.#waiting).game = game;
-      this.#sessions.get(sessionId).game = game;
-      this.#waiting = undefined;
-    } else {
+    if (!this.#waiting) {
       this.#waiting = sessionId;
+      return sessionId;
     }
+
+    const game = this.#createGame(sessionId);
+    this.#sessions.get(this.#waiting).game = game;
+    this.#sessions.get(sessionId).game = game;
+    this.#waiting = undefined;
 
     return sessionId;
   }

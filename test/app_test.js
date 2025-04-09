@@ -1,13 +1,30 @@
 import { assertEquals } from 'jsr:@std/assert';
 import { describe, it } from 'jsr:@std/testing/bdd';
 import { createApp } from '../src/app.js';
-import { Sessions } from "../src/sessions.js";
+import { Sessions } from '../src/sessions.js';
+
+const dummyLogger = async (c, next) => await next();
 
 describe('App', () => {
+  it('should use logger middleware', async () => {
+    const sessions = new Sessions();
+    let loggerWasCalled = false;
+
+    const testLogger = async (c, next) => {
+      loggerWasCalled = true;
+      await next();
+    };
+
+    const app = createApp(sessions, testLogger);
+    await app.request('/');
+
+    assertEquals(loggerWasCalled, true);
+  });
+
   describe('/', () => {
     it('should redirect to login page for an unsigned user', async () => {
       const sessions = new Sessions();
-      const app = createApp(sessions);
+      const app = createApp(sessions, dummyLogger);
 
       const response = await app.request('/');
 
@@ -18,7 +35,7 @@ describe('App', () => {
     it('should redirect to a waiting page for a valid user who is waiting', async () => {
       const sessions = new Sessions();
       const id = sessions.createSession('Nobody');
-      const app = createApp(sessions);
+      const app = createApp(sessions, dummyLogger);
 
       const r = new Request('http://localhost/');
       r.headers.set('Cookie', `sessionId=${id}`);
@@ -31,7 +48,7 @@ describe('App', () => {
 
     it('should redirect to login page for an invalid user', async () => {
       const sessions = new Sessions();
-      const app = createApp(sessions);
+      const app = createApp(sessions, dummyLogger);
 
       const r = new Request('http://localhost/');
       r.headers.set('Cookie', 'sessionId=99');
@@ -46,7 +63,7 @@ describe('App', () => {
       const sessions = new Sessions();
       const id = sessions.createSession('Nobody');
       sessions.createSession('Somebody');
-      const app = createApp(sessions);
+      const app = createApp(sessions, dummyLogger);
 
       const r = new Request('http://localhost/');
       r.headers.set('Cookie', `sessionId=${id}`);
@@ -60,17 +77,20 @@ describe('App', () => {
 
   describe('/login', { sanitizeResources: true }, () => {
     it('should serve the login page on GET', async () => {
-      const app = createApp();
+      const app = createApp(undefined, dummyLogger);
 
       const response = await app.request('/login');
       await response.text();
 
       assertEquals(response.status, 200);
-      assertEquals(response.headers.get('content-type'), 'text/html; charset=utf-8');
+      assertEquals(
+        response.headers.get('content-type'),
+        'text/html; charset=utf-8'
+      );
     });
 
     it('should redirect to / on POST and set a cookie', async () => {
-      const app = createApp(new Sessions());
+      const app = createApp(new Sessions(), dummyLogger);
 
       const firstReq = new Request('http://localhost/login', {
         method: 'POST',
@@ -98,7 +118,7 @@ describe('App', () => {
     it('should redirect a logged-in user to the appropriate page', async () => {
       const sessions = new Sessions();
       const sessionId = sessions.createSession('Nobody');
-      const app = createApp(sessions);
+      const app = createApp(sessions, dummyLogger);
 
       const r = new Request('http://localhost/login');
       r.headers.set('Cookie', `sessionId=${sessionId}`);
@@ -123,8 +143,8 @@ describe('App', () => {
   describe('/status', () => {
     it('should indicate that it is waiting for the second player', async () => {
       const sessions = new Sessions();
-      sessions.createSession("Player1");
-      const app = createApp(sessions);
+      sessions.createSession('Player1');
+      const app = createApp(sessions, dummyLogger);
 
       const r = new Request('http://localhost/status');
       r.headers.set('Cookie', 'sessionId=1');
@@ -133,14 +153,14 @@ describe('App', () => {
       const status = await response.json();
 
       assertEquals(response.status, 200);
-      assertEquals(status.status, "waiting");
+      assertEquals(status.status, 'waiting');
     });
 
     it('should create a new game when the second player joins', async () => {
       const sessions = new Sessions();
-      const sessionId1 = sessions.createSession("Player1");
-      const sessionId2 = sessions.createSession("Player2");
-      const app = createApp(sessions);
+      const sessionId1 = sessions.createSession('Player1');
+      const sessionId2 = sessions.createSession('Player2');
+      const app = createApp(sessions, dummyLogger);
 
       const r1 = new Request('http://localhost/status');
       r1.headers.set('Cookie', `sessionId=${sessionId1}`);
@@ -149,7 +169,7 @@ describe('App', () => {
       const status1 = await response1.json();
 
       assertEquals(response1.status, 200);
-      assertEquals(status1.status, "playing");
+      assertEquals(status1.status, 'playing');
 
       const r2 = new Request('http://localhost/status');
       r2.headers.set('Cookie', `sessionId=${sessionId2}`);
@@ -158,7 +178,7 @@ describe('App', () => {
       const status2 = await response2.json();
 
       assertEquals(response2.status, 200);
-      assertEquals(status2.status, "playing");
+      assertEquals(status2.status, 'playing');
     });
   });
 
@@ -167,7 +187,7 @@ describe('App', () => {
       const sessions = new Sessions();
       const sessionId = sessions.createSession('Nobody');
       sessions.createSession('Somebody');
-      const app = createApp(sessions);
+      const app = createApp(sessions, dummyLogger);
 
       const r = new Request('http://localhost/waiting');
       r.headers.set('Cookie', `sessionId=${sessionId}`);
@@ -181,7 +201,7 @@ describe('App', () => {
     it('should serve the waiting page if the user is waiting', async () => {
       const sessions = new Sessions();
       const sessionId = sessions.createSession('Nobody');
-      const app = createApp(sessions);
+      const app = createApp(sessions, dummyLogger);
 
       const r = new Request('http://localhost/waiting');
       r.headers.set('Cookie', `sessionId=${sessionId}`);
@@ -198,7 +218,7 @@ describe('App', () => {
       const sessions = new Sessions();
       const sessionId = sessions.createSession('Nobody');
       sessions.createSession('Somebody');
-      const app = createApp(sessions);
+      const app = createApp(sessions, dummyLogger);
 
       const r = new Request('http://localhost/home');
       r.headers.set('Cookie', `sessionId=${sessionId}`);
@@ -212,7 +232,7 @@ describe('App', () => {
     it('should redirect to / if the user is not playing', async () => {
       const sessions = new Sessions();
       const sessionId = sessions.createSession('Nobody');
-      const app = createApp(sessions);
+      const app = createApp(sessions, dummyLogger);
 
       const r = new Request('http://localhost/home');
       r.headers.set('Cookie', `sessionId=${sessionId}`);
@@ -229,7 +249,7 @@ describe('App', () => {
       const sessions = new Sessions();
       const sessionId = sessions.createSession('Nobody');
       sessions.createSession('Somebody');
-      const app = createApp(sessions);
+      const app = createApp(sessions, dummyLogger);
 
       const r = new Request('http://localhost/game-state');
       r.headers.set('Cookie', `sessionId=${sessionId}`);
@@ -240,10 +260,10 @@ describe('App', () => {
       const gameState = await response.json();
 
       assertEquals(gameState, {
-        'you': { name: 'Nobody', symbol: 'X' },
-        'opponent': { name: 'Somebody', symbol: 'O' },
-        'isYourTurn': true,
-        'board': ['', '', '', '', '', '', '', '', ''],
+        you: { name: 'Nobody', symbol: 'X' },
+        opponent: { name: 'Somebody', symbol: 'O' },
+        isYourTurn: true,
+        board: ['', '', '', '', '', '', '', '', ''],
       });
     });
 
@@ -251,7 +271,7 @@ describe('App', () => {
       const sessions = new Sessions();
       sessions.createSession('Nobody');
       const opponentSessionId = sessions.createSession('Somebody');
-      const app = createApp(sessions);
+      const app = createApp(sessions, dummyLogger);
 
       const r = new Request('http://localhost/game-state');
       r.headers.set('Cookie', `sessionId=${opponentSessionId}`);
@@ -262,10 +282,10 @@ describe('App', () => {
       const gameState = await response.json();
 
       assertEquals(gameState, {
-        'you': { name: 'Somebody', symbol: 'O' },
-        'opponent': { name: 'Nobody', symbol: 'X' },
-        'isYourTurn': false,
-        'board': ['', '', '', '', '', '', '', '', ''],
+        you: { name: 'Somebody', symbol: 'O' },
+        opponent: { name: 'Nobody', symbol: 'X' },
+        isYourTurn: false,
+        board: ['', '', '', '', '', '', '', '', ''],
       });
     });
   });
