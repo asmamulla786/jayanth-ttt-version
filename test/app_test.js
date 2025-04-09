@@ -8,7 +8,9 @@ describe('App', () => {
     it('should redirect to login page for an unsigned user', async () => {
       const sessions = new Sessions();
       const app = createApp(sessions);
+
       const response = await app.request('/');
+
       assertEquals(response.status, 303);
       assertEquals(response.headers.get('location'), '/login');
     });
@@ -17,13 +19,12 @@ describe('App', () => {
       const sessions = new Sessions();
       const id = sessions.createSession('Nobody');
       const app = createApp(sessions);
-      const r = new Request('http://localhost/', {
-        method: 'GET',
-        headers: {
-          'Cookie': `sessionId=${id}`,
-        },
-      });
+
+      const r = new Request('http://localhost/');
+      r.headers.set('Cookie', `sessionId=${id}`);
+
       const response = await app.request(r);
+
       assertEquals(response.status, 303);
       assertEquals(response.headers.get('location'), '/waiting');
     });
@@ -31,13 +32,12 @@ describe('App', () => {
     it('should redirect to login page for an invalid user', async () => {
       const sessions = new Sessions();
       const app = createApp(sessions);
-      const r = new Request('http://localhost/', {
-        method: 'GET',
-        headers: {
-          'Cookie': 'sessionId=99',
-        },
-      });
+
+      const r = new Request('http://localhost/');
+      r.headers.set('Cookie', 'sessionId=99');
+
       const response = await app.request(r);
+
       assertEquals(response.status, 303);
       assertEquals(response.headers.get('location'), '/login');
     });
@@ -47,13 +47,12 @@ describe('App', () => {
       const id = sessions.createSession('Nobody');
       sessions.createSession('Somebody');
       const app = createApp(sessions);
-      const r = new Request('http://localhost/', {
-        method: 'GET',
-        headers: {
-          'Cookie': `sessionId=${id}`,
-        },
-      });
+
+      const r = new Request('http://localhost/');
+      r.headers.set('Cookie', `sessionId=${id}`);
+
       const response = await app.request(r);
+
       assertEquals(response.status, 303);
       assertEquals(response.headers.get('location'), '/home');
     });
@@ -62,14 +61,17 @@ describe('App', () => {
   describe('/login', { sanitizeResources: true }, () => {
     it('should serve the login page on GET', async () => {
       const app = createApp();
+
       const response = await app.request('/login');
       await response.text();
+
       assertEquals(response.status, 200);
       assertEquals(response.headers.get('content-type'), 'text/html; charset=utf-8');
     });
 
     it('should redirect to / on POST and set a cookie', async () => {
       const app = createApp(new Sessions());
+
       const firstReq = new Request('http://localhost/login', {
         method: 'POST',
         headers: {
@@ -77,18 +79,18 @@ describe('App', () => {
         },
         body: 'name=Nobody',
       });
+
       const response = await app.request(firstReq);
       const cookie = response.headers.get('set-cookie');
+
       assertEquals(response.status, 303);
       assertEquals(cookie, 'sessionId=1; Path=/');
 
-      const secondReq = new Request('http://localhost/', {
-        method: 'GET',
-        headers: {
-          'Cookie': cookie,
-        },
-      });
+      const secondReq = new Request('http://localhost/');
+      secondReq.headers.set('Cookie', cookie);
+
       const response2 = await app.request(secondReq);
+
       assertEquals(response2.status, 303);
       assertEquals(response2.headers.get('location'), '/waiting');
     });
@@ -99,14 +101,13 @@ describe('App', () => {
       const sessions = new Sessions();
       sessions.createSession("Player1");
       const app = createApp(sessions);
-      const r = new Request('http://localhost/status', {
-        method: 'GET',
-        headers: {
-          'Cookie': 'sessionId=1',
-        },
-      });
+
+      const r = new Request('http://localhost/status');
+      r.headers.set('Cookie', 'sessionId=1');
+
       const response = await app.request(r);
       const status = await response.json();
+
       assertEquals(response.status, 200);
       assertEquals(status.status, "waiting");
     });
@@ -117,28 +118,24 @@ describe('App', () => {
       const sessionId2 = sessions.createSession("Player2");
       const app = createApp(sessions);
 
-      const r1 = new Request('http://localhost/status', {
-        method: 'GET',
-        headers: {
-          'Cookie': `sessionId=${sessionId1}`,
-        },
-      });
+      const r1 = new Request('http://localhost/status');
+      r1.headers.set('Cookie', `sessionId=${sessionId1}`);
+
       const response1 = await app.request(r1);
       const status1 = await response1.json();
+
       assertEquals(response1.status, 200);
       assertEquals(status1.status, "playing");
 
-      const r2 = new Request('http://localhost/status', {
-        method: 'GET',
-        headers: {
-          'Cookie': `sessionId=${sessionId2}`,
-        },
-      });
+      const r2 = new Request('http://localhost/status');
+      r2.headers.set('Cookie', `sessionId=${sessionId2}`);
+
       const response2 = await app.request(r2);
       const status2 = await response2.json();
+
       assertEquals(response2.status, 200);
       assertEquals(status2.status, "playing");
-    })
+    });
   });
 
   describe('/waiting', () => {
@@ -147,13 +144,12 @@ describe('App', () => {
       const sessionId = sessions.createSession('Nobody');
       sessions.createSession('Somebody');
       const app = createApp(sessions);
-      const r = new Request('http://localhost/waiting', {
-        method: 'GET',
-        headers: {
-          'Cookie': `sessionId=${sessionId}`,
-        },
-      });
+
+      const r = new Request('http://localhost/waiting');
+      r.headers.set('Cookie', `sessionId=${sessionId}`);
+
       const response = await app.request(r);
+
       assertEquals(response.status, 303);
       assertEquals(response.headers.get('location'), '/');
     });
@@ -162,14 +158,13 @@ describe('App', () => {
       const sessions = new Sessions();
       const sessionId = sessions.createSession('Nobody');
       const app = createApp(sessions);
-      const r = new Request('http://localhost/waiting', {
-        method: 'GET',
-        headers: {
-          'Cookie': `sessionId=${sessionId}`,
-        },
-      });
+
+      const r = new Request('http://localhost/waiting');
+      r.headers.set('Cookie', `sessionId=${sessionId}`);
+
       const response = await app.request(r);
       await response.text();
+
       assertEquals(response.status, 200);
     });
   });
@@ -180,14 +175,13 @@ describe('App', () => {
       const sessionId = sessions.createSession('Nobody');
       sessions.createSession('Somebody');
       const app = createApp(sessions);
-      const r = new Request('http://localhost/home', {
-        method: 'GET',
-        headers: {
-          'Cookie': `sessionId=${sessionId}`,
-        },
-      });
+
+      const r = new Request('http://localhost/home');
+      r.headers.set('Cookie', `sessionId=${sessionId}`);
+
       const response = await app.request(r);
       await response.text();
+
       assertEquals(response.status, 200);
     });
 
@@ -195,13 +189,12 @@ describe('App', () => {
       const sessions = new Sessions();
       const sessionId = sessions.createSession('Nobody');
       const app = createApp(sessions);
-      const r = new Request('http://localhost/home', {
-        method: 'GET',
-        headers: {
-          'Cookie': `sessionId=${sessionId}`,
-        },
-      });
+
+      const r = new Request('http://localhost/home');
+      r.headers.set('Cookie', `sessionId=${sessionId}`);
+
       const response = await app.request(r);
+
       assertEquals(response.status, 303);
       assertEquals(response.headers.get('location'), '/');
     });
@@ -213,15 +206,15 @@ describe('App', () => {
       const sessionId = sessions.createSession('Nobody');
       sessions.createSession('Somebody');
       const app = createApp(sessions);
-      const r = new Request('http://localhost/game-state', {
-        method: 'GET',
-        headers: {
-          'Cookie': `sessionId=${sessionId}`,
-        },
-      });
+
+      const r = new Request('http://localhost/game-state');
+      r.headers.set('Cookie', `sessionId=${sessionId}`);
+
       const response = await app.request(r);
+
       assertEquals(response.status, 200);
       const gameState = await response.json();
+
       assertEquals(gameState, {
         'you': { name: 'Nobody', symbol: 'X' },
         'opponent': { name: 'Somebody', symbol: 'O' },
@@ -232,18 +225,18 @@ describe('App', () => {
 
     it('First status of the opponent', async () => {
       const sessions = new Sessions();
-      const sessionId = sessions.createSession('Nobody');
+      sessions.createSession('Nobody');
       const opponentSessionId = sessions.createSession('Somebody');
       const app = createApp(sessions);
-      const r = new Request('http://localhost/game-state', {
-        method: 'GET',
-        headers: {
-          'Cookie': `sessionId=${opponentSessionId}`,
-        },
-      });
+
+      const r = new Request('http://localhost/game-state');
+      r.headers.set('Cookie', `sessionId=${opponentSessionId}`);
+
       const response = await app.request(r);
+
       assertEquals(response.status, 200);
       const gameState = await response.json();
+
       assertEquals(gameState, {
         'you': { name: 'Somebody', symbol: 'O' },
         'opponent': { name: 'Nobody', symbol: 'X' },
